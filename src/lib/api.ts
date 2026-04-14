@@ -20,6 +20,7 @@ type CarRow = {
   body_type: string | null
   color: string | null
   trunk_volume: number | null
+  photo_url: string | null
 }
 
 type ExtraRow = { id: string; name: string | null; price_per_day: number | null }
@@ -65,6 +66,7 @@ function mapCar(row: CarRow): Car {
     bodyType: row.body_type ?? undefined,
     color: row.color ?? undefined,
     trunkVolume: row.trunk_volume ?? undefined,
+    photoUrl: row.photo_url ?? undefined,
   }
 }
 

@@ -4,6 +4,7 @@ import { CAT_NAMES, PENALTY } from '../types'
 import BookingModal from '../components/BookingModal'
 import { useApp } from '../hooks/useApp'
 import { getCarById, getExistingBookings } from '../lib/api'
+import { carImage } from '../lib/carImages'
 import type { Car } from '../types'
 
 export default function CarDetailPage() {
@@ -75,8 +76,12 @@ export default function CarDetailPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_300px]">
         <div>
-          <div className="h-52 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center text-8xl mb-4 border border-gray-100">
-            {car.icon}
+          <div className="car-hero-3d mb-4">
+            <img src={carImage(car, '1200x800')} alt={car.name} className="h-full w-full object-cover" />
+            <div className="car-hero-3d__plate">
+              <span>{car.icon}</span>
+              <span>{car.city}</span>
+            </div>
           </div>
 
           <div className="card p-4">

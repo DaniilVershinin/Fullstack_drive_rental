@@ -21,6 +21,7 @@ export interface Car {
   bodyType?: string
   color?: string
   trunkVolume?: number
+  photoUrl?: string
 }
 
 export interface Extra {

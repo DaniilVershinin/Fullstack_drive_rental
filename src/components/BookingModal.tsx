@@ -3,6 +3,7 @@ import { EXTRAS, EXISTING_BOOKINGS, PICKUP_POINTS } from '../data'
 import type { Car } from '../types'
 import { useApp } from '../hooks/useApp'
 import { createBooking, getExistingBookings, getExtras, getPickupPoints } from '../lib/api'
+import { carImage } from '../lib/carImages'
 
 interface Props { car: Car; onClose: () => void; onBooked: () => void }
 
@@ -36,6 +37,13 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
   const [conflict, setConflict] = useState(false)
   const [done, setDone] = useState(false)
   const [ref] = useState(`DR-${2052 + Math.floor(Math.random() * 20)}`)
+
+  const applyPreset = (days: number) => {
+    const nextFrom = new Date()
+    const nextTo = new Date(Date.now() + days * 86400000)
+    setFrom(nextFrom.toISOString().split('T')[0])
+    setTo(nextTo.toISOString().split('T')[0])
+  }
 
   useEffect(() => {
     Promise.all([getExtras(), getPickupPoints(), getExistingBookings(car.id)])
@@ -101,8 +109,8 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
   const stepDots = [1, 2, 3]
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="modal-backdrop">
+      <div className="booking-dialog">
         <div className="flex items-start justify-between mb-3">
           <div className="font-syne font-bold text-base">{car.name} · Бронирование</div>
           <button onClick={onClose} className="bg-gray-100 rounded-lg w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200">✕</button>
@@ -125,8 +133,8 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
 
         {step === 1 && (
           <div>
-            <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 mb-4">
-              <span className="text-3xl">{car.icon}</span>
+            <div className="booking-car-strip">
+              <img src={carImage(car)} alt={car.name} className="h-20 w-28 rounded-lg object-cover" />
               <div>
                 <div className="font-semibold text-sm">{car.name} {car.year}</div>
                 <div className="text-xs text-gray-500">{car.fuel} · {car.transmission}</div>
@@ -140,14 +148,29 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="date-popover mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="font-semibold text-sm">Даты аренды</div>
+                  <div className="text-xs text-gray-500">{days} дн. · {total.toLocaleString('ru')} ₽</div>
+                </div>
+                <div className="flex gap-1">
+                  {[2, 3, 7].map(preset => (
+                    <button key={preset} type="button" className="date-preset" onClick={() => applyPreset(preset)}>
+                      {preset} дн.
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="label">Дата начала *</label>
-                <input type="date" className="input" value={from} onChange={e => setFrom(e.target.value)} />
+                <input type="date" className="input date-field" value={from} onChange={e => setFrom(e.target.value)} />
               </div>
               <div>
                 <label className="label">Дата окончания *</label>
-                <input type="date" className="input" value={to} onChange={e => setTo(e.target.value)} />
+                <input type="date" className="input date-field" value={to} onChange={e => setTo(e.target.value)} />
+              </div>
               </div>
             </div>
 

@@ -59,3 +59,187 @@ body {
 .tbl th { @apply text-left px-3 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide bg-gray-50; }
 .tbl td { @apply px-3 py-3 border-t border-gray-100 text-sm; }
 .tbl tr:hover td { @apply bg-gray-50; }
+
+.auth-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(135deg, rgba(26, 26, 46, 0.96), rgba(15, 52, 96, 0.9)),
+    url('https://source.unsplash.com/1600x1000/?car,rental') center/cover;
+}
+
+.auth-shell {
+  width: min(880px, 100%);
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.35);
+}
+
+.auth-side {
+  position: relative;
+  min-height: 560px;
+  padding: 42px;
+  background: linear-gradient(160deg, #1a1a2e, #0f3460 55%, #e94560);
+  overflow: hidden;
+}
+
+.auth-side__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 360px;
+}
+
+.auth-panel {
+  padding: 32px;
+}
+
+.auth-car-3d {
+  position: absolute;
+  left: 70px;
+  right: 34px;
+  bottom: 64px;
+  height: 148px;
+  transform: perspective(700px) rotateX(58deg) rotateZ(-10deg);
+  transform-style: preserve-3d;
+}
+
+.auth-car-3d__body {
+  position: absolute;
+  inset: 18px 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f8f7f4, #b9c8d8 45%, #ffffff);
+  box-shadow: 0 34px 60px rgba(0, 0, 0, 0.34), inset 0 -14px 24px rgba(15, 52, 96, 0.24);
+}
+
+.auth-car-3d__body::before,
+.auth-car-3d__body::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e5e7eb 0 22%, #111827 24% 65%, #020617 66%);
+}
+
+.auth-car-3d__body::before { left: 58px; }
+.auth-car-3d__body::after { right: 58px; }
+
+.auth-car-3d__shine {
+  position: absolute;
+  inset: 38px 84px 70px;
+  border-radius: 8px;
+  background: rgba(15, 52, 96, 0.25);
+  transform: translateZ(24px);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 15, 25, 0.68);
+  backdrop-filter: blur(8px);
+}
+
+.booking-dialog {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+}
+
+.booking-car-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.date-popover {
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.date-field {
+  color-scheme: light;
+}
+
+.date-preset {
+  border: 1px solid #dbe4ee;
+  border-radius: 8px;
+  background: #fff;
+  padding: 5px 8px;
+  color: #0f3460;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.car-card-photo {
+  height: 150px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.car-hero-3d {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+  transform: perspective(1200px) rotateX(1.2deg);
+}
+
+.car-hero-3d::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, 0.5));
+}
+
+.car-hero-3d__plate {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 8px 12px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .auth-shell {
+    display: block;
+  }
+
+  .auth-panel {
+    padding: 24px;
+  }
+
+  .car-hero-3d {
+    height: 230px;
+  }
+}

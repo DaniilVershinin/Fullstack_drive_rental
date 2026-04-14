@@ -4,6 +4,7 @@ import { CARS } from '../data'
 import BookingModal from '../components/BookingModal'
 import { useApp } from '../hooks/useApp'
 import { getCars } from '../lib/api'
+import { carImage } from '../lib/carImages'
 import type { Car } from '../types'
 
 export default function CatalogPage() {
@@ -159,8 +160,10 @@ export default function CatalogPage() {
                 className="card overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all"
                 onClick={() => nav(`/car/${car.id}`)}
               >
-                <div className="h-28 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-5xl relative">
-                  {car.icon}
+                <div className="car-card-photo relative">
+                  <img src={carImage(car)} alt={car.name} className="h-full w-full object-cover" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                  <span className="absolute bottom-2 left-2 text-xl">{car.icon}</span>
                   <span className={`absolute top-2 right-2 badge ${car.status === 'available' ? 'badge-green' : 'badge-red'}`}>
                     {car.status === 'available' ? 'Доступен' : 'Занят'}
                   </span>
