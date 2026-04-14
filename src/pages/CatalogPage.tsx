@@ -2,9 +2,9 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CARS } from '../data'
 import BookingModal from '../components/BookingModal'
+import CarImage from '../components/CarImage'
 import { useApp } from '../hooks/useApp'
 import { getCars } from '../lib/api'
-import { carImage } from '../lib/carImages'
 import type { Car } from '../types'
 
 export default function CatalogPage() {
@@ -161,7 +161,7 @@ export default function CatalogPage() {
                 onClick={() => nav(`/car/${car.id}`)}
               >
                 <div className="car-card-photo relative">
-                  <img src={carImage(car)} alt={car.name} className="h-full w-full object-cover" loading="lazy" />
+                  <CarImage car={car} className="h-full w-full" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
                   <span className="absolute bottom-2 left-2 text-xl">{car.icon}</span>
                   <span className={`absolute top-2 right-2 badge ${car.status === 'available' ? 'badge-green' : 'badge-red'}`}>

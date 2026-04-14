@@ -3,7 +3,7 @@ import { EXTRAS, EXISTING_BOOKINGS, PICKUP_POINTS } from '../data'
 import type { Car } from '../types'
 import { useApp } from '../hooks/useApp'
 import { createBooking, getExistingBookings, getExtras, getPickupPoints } from '../lib/api'
-import { carImage } from '../lib/carImages'
+import CarImage from './CarImage'
 
 interface Props { car: Car; onClose: () => void; onBooked: () => void }
 
@@ -134,7 +134,7 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
         {step === 1 && (
           <div>
             <div className="booking-car-strip">
-              <img src={carImage(car)} alt={car.name} className="h-20 w-28 rounded-lg object-cover" />
+              <CarImage car={car} className="h-20 w-28 rounded-lg" />
               <div>
                 <div className="font-semibold text-sm">{car.name} {car.year}</div>
                 <div className="text-xs text-gray-500">{car.fuel} · {car.transmission}</div>

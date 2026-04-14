@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { CAT_NAMES, PENALTY } from '../types'
 import BookingModal from '../components/BookingModal'
+import CarImage from '../components/CarImage'
 import { useApp } from '../hooks/useApp'
 import { getCarById, getExistingBookings } from '../lib/api'
-import { carImage } from '../lib/carImages'
 import type { Car } from '../types'
 
 export default function CarDetailPage() {
@@ -77,7 +77,7 @@ export default function CarDetailPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_300px]">
         <div>
           <div className="car-hero-3d mb-4">
-            <img src={carImage(car, '1200x800')} alt={car.name} className="h-full w-full object-cover" />
+            <CarImage car={car} size="1200x800" className="h-full w-full" />
             <div className="car-hero-3d__plate">
               <span>{car.icon}</span>
               <span>{car.city}</span>
