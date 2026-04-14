@@ -11,6 +11,10 @@ const CATEGORIES = [
   { value: 'suv', label: 'SUV', note: 'кроссоверы' },
 ]
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
+}
+
 export default function HomePage() {
   const nav = useNavigate()
   const today = new Date().toISOString().split('T')[0]
@@ -20,8 +24,15 @@ export default function HomePage() {
   const [cat, setCat] = useState('')
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState(in3)
+  const [cityOpen, setCityOpen] = useState(false)
+  const [dateOpen, setDateOpen] = useState(false)
 
   const search = () => nav(`/catalog?city=${city}&cat=${cat}&from=${from}&to=${to}`)
+
+  const setPeriod = (days: number) => {
+    setFrom(today)
+    setTo(new Date(Date.now() + days * 86400000).toISOString().split('T')[0])
+  }
 
   return (
     <div>
@@ -39,11 +50,31 @@ export default function HomePage() {
           </div>
 
           <div className="home-search-panel">
-            <div className="home-field home-field--wide">
+            <div className="home-popover">
               <span className="home-field__label">Город</span>
-              <select value={city} onChange={e => setCity(e.target.value)}>
-                {CITIES.map(item => <option key={item}>{item}</option>)}
-              </select>
+              <button type="button" className="home-trigger" onClick={() => setCityOpen(open => !open)}>
+                <span>{city}</span>
+                <small>Выбрать город</small>
+              </button>
+              {cityOpen && (
+                <div className="home-menu home-menu--cities">
+                  {CITIES.map((item, index) => (
+                    <button
+                      key={item}
+                      type="button"
+                      style={{ animationDelay: `${index * 18}ms` }}
+                      className={`home-menu-item ${city === item ? 'is-active' : ''}`}
+                      onClick={() => {
+                        setCity(item)
+                        setCityOpen(false)
+                      }}
+                    >
+                      <span>{item}</span>
+                      <small>{item === 'Москва' ? 'самый большой парк' : 'доступные пункты выдачи'}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="home-category-grid">
@@ -61,14 +92,37 @@ export default function HomePage() {
             </div>
 
             <div className="home-dates">
-              <label className="home-field">
-                <span className="home-field__label">Начало</span>
-                <input type="date" value={from} min={today} onChange={e => setFrom(e.target.value)} />
-              </label>
-              <label className="home-field">
-                <span className="home-field__label">Возврат</span>
-                <input type="date" value={to} min={from} onChange={e => setTo(e.target.value)} />
-              </label>
+              <div className="home-popover home-popover--dates">
+                <span className="home-field__label">Даты</span>
+                <button type="button" className="home-trigger" onClick={() => setDateOpen(open => !open)}>
+                  <span>{formatDate(from)} - {formatDate(to)}</span>
+                  <small>Изменить период</small>
+                </button>
+                {dateOpen && (
+                  <div className="home-menu home-menu--dates">
+                    <div className="home-date-presets">
+                      {[2, 3, 7, 14].map(days => (
+                        <button key={days} type="button" onClick={() => setPeriod(days)}>
+                          {days} дн.
+                        </button>
+                      ))}
+                    </div>
+                    <div className="home-date-inputs">
+                      <label>
+                        <span>Начало</span>
+                        <input type="date" value={from} min={today} onChange={e => setFrom(e.target.value)} />
+                      </label>
+                      <label>
+                        <span>Возврат</span>
+                        <input type="date" value={to} min={from} onChange={e => setTo(e.target.value)} />
+                      </label>
+                    </div>
+                    <button type="button" className="home-menu-apply" onClick={() => setDateOpen(false)}>
+                      Применить даты
+                    </button>
+                  </div>
+                )}
+              </div>
               <button onClick={search} className="home-search-button">
                 Найти авто
               </button>
