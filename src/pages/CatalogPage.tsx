@@ -171,6 +171,11 @@ export default function CatalogPage() {
                 <div className="p-3">
                   <div className="font-syne font-bold text-sm mb-0.5">{car.name}</div>
                   <div className="text-xs text-gray-500 mb-2">{car.year} · {car.fuel} · {car.city}</div>
+                  <div className="car-specs-mini">
+                    <span>{car.horsepower ? `${car.horsepower} л.с.` : 'мощность —'}</span>
+                    <span>{car.engineVolume ?? 'объем —'}</span>
+                    <span>{car.drive ?? 'привод —'}</span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <div className="font-syne font-extrabold text-sm">
                       {car.price.toLocaleString('ru')} ₽<span className="text-xs font-normal text-gray-400">/сут</span>

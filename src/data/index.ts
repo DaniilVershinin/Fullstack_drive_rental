@@ -1,14 +1,14 @@
 import type { Car, Extra, Order, User } from '../types'
 
 export const CARS: Car[] = [
-  { id: 1, name: 'Kia Rio', year: 2022, cat: 'economy', price: 1800, status: 'available', icon: '🚗', fuel: 'Бензин', transmission: 'Механика', seats: 5, city: 'Москва' },
-  { id: 2, name: 'Toyota Camry', year: 2023, cat: 'comfort', price: 3500, status: 'available', icon: '🚙', fuel: 'Гибрид', transmission: 'Автомат', seats: 5, city: 'Москва' },
-  { id: 3, name: 'BMW 5 Series', year: 2023, cat: 'business', price: 7500, status: 'busy', icon: '🏎️', fuel: 'Бензин', transmission: 'Автомат', seats: 5, city: 'Санкт-Петербург' },
-  { id: 4, name: 'Toyota RAV4', year: 2022, cat: 'suv', price: 4200, status: 'available', icon: '🚐', fuel: 'Бензин', transmission: 'Автомат', seats: 5, city: 'Москва' },
-  { id: 5, name: 'Hyundai Solaris', year: 2023, cat: 'economy', price: 1600, status: 'available', icon: '🚗', fuel: 'Бензин', transmission: 'Механика', seats: 5, city: 'Казань' },
-  { id: 6, name: 'Mercedes E-Class', year: 2023, cat: 'business', price: 9000, status: 'available', icon: '🏎️', fuel: 'Дизель', transmission: 'Автомат', seats: 5, city: 'Санкт-Петербург' },
-  { id: 7, name: 'VW Tiguan', year: 2022, cat: 'suv', price: 5200, status: 'busy', icon: '🚐', fuel: 'Бензин', transmission: 'Автомат', seats: 7, city: 'Новосибирск' },
-  { id: 8, name: 'Skoda Octavia', year: 2023, cat: 'comfort', price: 2800, status: 'available', icon: '🚙', fuel: 'Дизель', transmission: 'Автомат', seats: 5, city: 'Москва' },
+  { id: 1, name: 'Kia Rio', year: 2022, cat: 'economy', price: 1800, status: 'available', icon: '🚗', fuel: 'Бензин', transmission: 'Механика', seats: 5, city: 'Москва', drive: 'передний', horsepower: 123, engineVolume: '1.6 л' },
+  { id: 2, name: 'Toyota Camry', year: 2023, cat: 'comfort', price: 3500, status: 'available', icon: '🚙', fuel: 'Гибрид', transmission: 'Автомат', seats: 5, city: 'Москва', drive: 'передний', horsepower: 178, engineVolume: '2.5 л' },
+  { id: 3, name: 'BMW 5 Series', year: 2023, cat: 'business', price: 7500, status: 'busy', icon: '🏎️', fuel: 'Бензин', transmission: 'Автомат', seats: 5, city: 'Санкт-Петербург', drive: 'полный', horsepower: 249, engineVolume: '2.0 л' },
+  { id: 4, name: 'Toyota RAV4', year: 2022, cat: 'suv', price: 4200, status: 'available', icon: '🚐', fuel: 'Бензин', transmission: 'Автомат', seats: 5, city: 'Москва', drive: 'полный', horsepower: 199, engineVolume: '2.5 л' },
+  { id: 5, name: 'Hyundai Solaris', year: 2023, cat: 'economy', price: 1600, status: 'available', icon: '🚗', fuel: 'Бензин', transmission: 'Механика', seats: 5, city: 'Казань', drive: 'передний', horsepower: 123, engineVolume: '1.6 л' },
+  { id: 6, name: 'Mercedes E-Class', year: 2023, cat: 'business', price: 9000, status: 'available', icon: '🏎️', fuel: 'Дизель', transmission: 'Автомат', seats: 5, city: 'Санкт-Петербург', drive: 'полный', horsepower: 197, engineVolume: '2.0 л' },
+  { id: 7, name: 'VW Tiguan', year: 2022, cat: 'suv', price: 5200, status: 'busy', icon: '🚐', fuel: 'Бензин', transmission: 'Автомат', seats: 7, city: 'Новосибирск', drive: 'полный', horsepower: 180, engineVolume: '2.0 л' },
+  { id: 8, name: 'Skoda Octavia', year: 2023, cat: 'comfort', price: 2800, status: 'available', icon: '🚙', fuel: 'Дизель', transmission: 'Автомат', seats: 5, city: 'Москва', drive: 'передний', horsepower: 150, engineVolume: '1.4 л' },
 ]
 
 export const EXTRAS: Extra[] = [

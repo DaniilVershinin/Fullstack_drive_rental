@@ -8,9 +8,14 @@
   --accent2: #0f3460;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: #f8f7f4;
+  overflow-x: hidden;
 }
 
 .font-syne { font-family: 'Syne', sans-serif; }
@@ -113,7 +118,8 @@ body {
 
 .home-hero {
   position: relative;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   background:
     linear-gradient(135deg, rgba(26, 26, 46, 0.96), rgba(15, 52, 96, 0.92)),
     linear-gradient(45deg, #1a1a2e, #0f3460);
@@ -151,7 +157,128 @@ body {
   text-transform: uppercase;
 }
 
+.home-route-card {
+  width: min(520px, 100%);
+  margin-top: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 14px;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  transition: transform 0.22s ease, background 0.22s ease;
+}
+
+.home-route-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.home-route-card__road {
+  position: relative;
+  display: flex;
+  height: 54px;
+  align-items: center;
+}
+
+.home-route-line {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0 18px, transparent 18px 30px);
+  transform: translateY(-50%);
+}
+
+.home-route-dot {
+  position: relative;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #e94560;
+  box-shadow: 0 0 0 6px rgba(233, 69, 96, 0.16);
+}
+
+.home-route-dot.is-end {
+  margin-left: auto;
+  background: #10b981;
+  box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.16);
+}
+
+.home-route-car {
+  position: absolute;
+  left: 18%;
+  top: 13px;
+  z-index: 3;
+  width: 72px;
+  height: 28px;
+  border-radius: 8px 8px 6px 6px;
+  background: linear-gradient(90deg, #f8fafc, #cbd5e1);
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.26);
+  animation: routeCar 4.8s ease-in-out infinite;
+}
+
+.home-route-car::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: -9px;
+  width: 34px;
+  height: 14px;
+  border-radius: 8px 8px 2px 2px;
+  background: #dbeafe;
+}
+
+.home-route-car::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: -6px;
+  height: 12px;
+  background:
+    radial-gradient(circle at 8px 6px, #111827 0 5px, transparent 6px),
+    radial-gradient(circle at calc(100% - 8px) 6px, #111827 0 5px, transparent 6px);
+}
+
+.home-route-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-route-card__meta div {
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 9px 10px;
+}
+
+.home-route-card__meta span,
+.home-route-card__meta strong {
+  display: block;
+}
+
+.home-route-card__meta span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.home-route-card__meta strong {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .home-search-panel {
+  position: relative;
+  z-index: 5;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
@@ -317,35 +444,106 @@ body {
 }
 
 .home-menu--dates {
-  width: min(420px, calc(100vw - 40px));
+  left: auto;
+  right: 0;
+  width: min(520px, calc(100vw - 40px));
+  padding: 12px;
+}
+
+.home-date-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.home-date-summary span,
+.home-date-summary strong {
+  display: block;
+}
+
+.home-date-summary span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.home-date-summary strong {
+  margin-top: 2px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.home-date-summary em {
+  display: inline-flex;
+  min-width: 58px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .home-date-presets {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.home-date-presets button,
-.home-menu-apply {
+.home-date-presets button {
+  border: 1px solid #dbe4ee;
   border-radius: 8px;
-  background: #1a1a2e;
-  color: #fff;
+  background: #fff;
+  color: #0f3460;
   padding: 9px 10px;
   font-size: 12px;
   font-weight: 800;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.home-date-presets button:hover,
+.home-date-presets button.is-active {
+  transform: translateY(-1px);
+  border-color: #e94560;
+  background: #fff1f2;
+  color: #be123c;
 }
 
 .home-date-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
+}
+
+.home-date-inputs label {
+  display: block;
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.home-date-inputs label:focus-within {
+  border-color: #0f3460;
+  background: #fff;
 }
 
 .home-date-inputs span {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   color: #64748b;
   font-size: 11px;
   font-weight: 800;
@@ -354,18 +552,31 @@ body {
 
 .home-date-inputs input {
   width: 100%;
-  border: 1px solid #dbe4ee;
+  border: 0;
   border-radius: 8px;
-  background: #f8fafc;
-  padding: 10px;
+  background: #fff;
+  padding: 10px 9px;
   color: #0f172a;
   font-size: 13px;
+  font-weight: 800;
+  outline: none;
 }
 
 .home-menu-apply {
+  border-radius: 8px;
   width: 100%;
   margin-top: 10px;
   background: #e94560;
+  color: #fff;
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.home-menu-apply:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
 }
 
 @keyframes menuDrop {
@@ -376,6 +587,11 @@ body {
 @keyframes menuItemIn {
   from { transform: translateY(5px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes routeCar {
+  0%, 100% { transform: translateX(0) rotate(-1deg); }
+  50% { transform: translateX(210px) rotate(1deg); }
 }
 
 .home-search-button {
@@ -551,22 +767,32 @@ body {
 }
 
 .car-card-photo {
-  height: 150px;
+  height: 170px;
   overflow: hidden;
-  background: #e5e7eb;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
 }
 
 .car-image {
   position: relative;
   overflow: hidden;
-  background-position: center;
-  background-size: cover;
+  background-color: #f8fafc;
+}
+
+.car-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.08), rgba(15, 23, 42, 0.08));
 }
 
 .car-image img {
+  position: relative;
+  z-index: 2;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 6px;
   opacity: 0;
   transition: opacity 0.22s ease;
 }
@@ -575,12 +801,47 @@ body {
   opacity: 1;
 }
 
+.car-image__backdrop {
+  position: absolute !important;
+  inset: -12px;
+  z-index: 0 !important;
+  width: calc(100% + 24px) !important;
+  height: calc(100% + 24px) !important;
+  object-fit: cover !important;
+  padding: 0 !important;
+  opacity: 0.38 !important;
+  filter: blur(16px) saturate(1.12);
+  transform: scale(1.05);
+}
+
+.car-specs-mini {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.car-specs-mini span {
+  overflow: hidden;
+  border: 1px solid #e6edf5;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 6px 5px;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .car-hero-3d {
   position: relative;
-  height: 320px;
+  height: 360px;
   overflow: hidden;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
   box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
   transform: perspective(1200px) rotateX(1.2deg);
 }
@@ -621,6 +882,19 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .home-menu--dates,
+  .home-date-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .home-route-card__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .home-route-car {
+    animation-name: routeCarMobile;
+  }
+
   .home-stats {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -636,4 +910,9 @@ body {
   .car-hero-3d {
     height: 230px;
   }
+}
+
+@keyframes routeCarMobile {
+  0%, 100% { transform: translateX(0) rotate(-1deg); }
+  50% { transform: translateX(150px) rotate(1deg); }
 }

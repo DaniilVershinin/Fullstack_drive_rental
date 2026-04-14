@@ -15,6 +15,16 @@ function formatDate(value: string) {
   return new Date(value).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
 }
 
+function addDays(value: string, days: number) {
+  const date = new Date(value)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().split('T')[0]
+}
+
+function daysBetween(from: string, to: string) {
+  return Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / 86400000))
+}
+
 export default function HomePage() {
   const nav = useNavigate()
   const today = new Date().toISOString().split('T')[0]
@@ -27,11 +37,17 @@ export default function HomePage() {
   const [cityOpen, setCityOpen] = useState(false)
   const [dateOpen, setDateOpen] = useState(false)
 
-  const search = () => nav(`/catalog?city=${city}&cat=${cat}&from=${from}&to=${to}`)
+  const selectedCategory = CATEGORIES.find(item => item.value === cat) ?? CATEGORIES[0]
+  const duration = daysBetween(from, to)
+  const search = () => nav(`/catalog?city=${encodeURIComponent(city)}&cat=${cat}&from=${from}&to=${to}`)
 
   const setPeriod = (days: number) => {
-    setFrom(today)
-    setTo(new Date(Date.now() + days * 86400000).toISOString().split('T')[0])
+    setTo(addDays(from, days))
+  }
+
+  const changeFrom = (value: string) => {
+    setFrom(value)
+    if (new Date(to) <= new Date(value)) setTo(addDays(value, duration))
   }
 
   return (
@@ -47,6 +63,28 @@ export default function HomePage() {
             <p className="text-white/70 text-sm md:text-base leading-relaxed max-w-xl">
               Выберите город, класс машины и даты поездки. Каталог покажет доступные варианты из Supabase.
             </p>
+            <div className="home-route-card">
+              <div className="home-route-card__road">
+                <span className="home-route-dot is-start" />
+                <span className="home-route-line" />
+                <span className="home-route-car" />
+                <span className="home-route-dot is-end" />
+              </div>
+              <div className="home-route-card__meta">
+                <div>
+                  <span>Город</span>
+                  <strong>{city}</strong>
+                </div>
+                <div>
+                  <span>Класс</span>
+                  <strong>{selectedCategory.label}</strong>
+                </div>
+                <div>
+                  <span>Срок</span>
+                  <strong>{duration} дн.</strong>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="home-search-panel">
@@ -100,9 +138,21 @@ export default function HomePage() {
                 </button>
                 {dateOpen && (
                   <div className="home-menu home-menu--dates">
+                    <div className="home-date-summary">
+                      <div>
+                        <span>Поездка</span>
+                        <strong>{formatDate(from)} - {formatDate(to)}</strong>
+                      </div>
+                      <em>{duration} дн.</em>
+                    </div>
                     <div className="home-date-presets">
                       {[2, 3, 7, 14].map(days => (
-                        <button key={days} type="button" onClick={() => setPeriod(days)}>
+                        <button
+                          key={days}
+                          type="button"
+                          className={duration === days ? 'is-active' : ''}
+                          onClick={() => setPeriod(days)}
+                        >
                           {days} дн.
                         </button>
                       ))}
@@ -110,7 +160,7 @@ export default function HomePage() {
                     <div className="home-date-inputs">
                       <label>
                         <span>Начало</span>
-                        <input type="date" value={from} min={today} onChange={e => setFrom(e.target.value)} />
+                        <input type="date" value={from} min={today} onChange={e => changeFrom(e.target.value)} />
                       </label>
                       <label>
                         <span>Возврат</span>

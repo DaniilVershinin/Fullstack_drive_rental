@@ -15,7 +15,15 @@ export default function CarImage({ car, className = '', size = '900x600' }: Prop
   const src = car.photoUrl && !failed ? carImage(car, size) : fallback
 
   return (
-    <div className={`car-image ${className}`} style={{ backgroundImage: `url("${fallback}")` }}>
+    <div className={`car-image ${className}`}>
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="car-image__backdrop"
+      />
       <img
         src={src}
         alt={car.name}
