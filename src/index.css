@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #1a1a2e;
+  --accent: #e94560;
+  --accent2: #0f3460;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #f8f7f4;
+}
+
+.font-syne { font-family: 'Syne', sans-serif; }
+
+.btn-primary {
+  @apply bg-[#e94560] text-white font-semibold rounded-xl px-4 py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full;
+  font-family: 'Syne', sans-serif;
+}
+
+.btn-secondary {
+  @apply bg-transparent text-gray-700 border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50 transition-colors w-full text-sm;
+}
+
+.card {
+  @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+}
+
+.input {
+  @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 outline-none focus:border-[#0f3460] transition-colors font-[DM_Sans];
+}
+
+.label {
+  @apply block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+}
+
+.badge-green { @apply bg-green-100 text-green-800; }
+.badge-red   { @apply bg-red-100 text-red-800; }
+.badge-yellow{ @apply bg-yellow-100 text-yellow-800; }
+.badge-gray  { @apply bg-gray-100 text-gray-600; }
+
+.toast-enter { animation: slideUp 0.3s ease; }
+@keyframes slideUp {
+  from { transform: translateY(80px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Step indicator */
+.step-dot { @apply h-1 flex-1 rounded-full bg-gray-200 transition-all duration-300; }
+.step-dot.active { @apply bg-[#e94560]; }
+
+/* Table */
+.tbl th { @apply text-left px-3 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide bg-gray-50; }
+.tbl td { @apply px-3 py-3 border-t border-gray-100 text-sm; }
+.tbl tr:hover td { @apply bg-gray-50; }
