@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const CITIES = ['Москва', 'Санкт-Петербург', 'Казань', 'Новосибирск', 'Воронеж', 'Белгород', 'Старый Оскол', 'Липецк', 'Елец', 'Борисоглебск', 'Россошь']
+
+const CATEGORIES = [
+  { value: '', label: 'Любая', note: 'все классы' },
+  { value: 'economy', label: 'Эконом', note: 'от 1 500 ₽' },
+  { value: 'comfort', label: 'Комфорт', note: 'универсально' },
+  { value: 'business', label: 'Бизнес', note: 'премиум' },
+  { value: 'suv', label: 'SUV', note: 'кроссоверы' },
+]
+
 export default function HomePage() {
   const nav = useNavigate()
   const today = new Date().toISOString().split('T')[0]
@@ -15,61 +25,61 @@ export default function HomePage() {
 
   return (
     <div>
-      <div className="bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] px-4 pt-8 pb-6 relative overflow-hidden">
-        <div className="absolute top-[-40px] right-[-40px] w-48 h-48 rounded-full bg-[#e94560] opacity-[0.06]" />
-        <h1 className="font-syne font-extrabold text-3xl text-white leading-tight mb-1">
-          Аренда авто<br />за <span className="text-[#e94560]">5 минут</span>
-        </h1>
-        <p className="text-white/60 text-sm mb-5">Онлайн-бронирование без звонков и очередей</p>
+      <section className="home-hero">
+        <div className="home-hero__content">
+          <div className="home-copy">
+            <p className="home-kicker">Онлайн-аренда без звонков</p>
+            <h1 className="font-syne font-extrabold text-4xl md:text-5xl text-white leading-tight mb-3">
+              Авто на нужные даты за пару кликов
+              <span className="sr-only">Аренда авто</span>
+            </h1>
+            <p className="text-white/70 text-sm md:text-base leading-relaxed max-w-xl">
+              Выберите город, класс машины и даты поездки. Каталог покажет доступные варианты из Supabase.
+            </p>
+          </div>
 
-        <div className="bg-white rounded-2xl p-4 grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-2 md:items-end">
-          <div>
-            <label className="label">Город</label>
-            <select className="input" value={city} onChange={e => setCity(e.target.value)}>
-              <option>Москва</option>
-              <option>Санкт-Петербург</option>
-              <option>Казань</option>
-              <option>Новосибирск</option>
-              <option>Воронеж</option>
-              <option>Белгород</option>
-              <option>Старый Оскол</option>
-              <option>Липецк</option>
-              <option>Елец</option>
-              <option>Борисоглебск</option>
-              <option>Россошь</option>
-            </select>
+          <div className="home-search-panel">
+            <div className="home-field home-field--wide">
+              <span className="home-field__label">Город</span>
+              <select value={city} onChange={e => setCity(e.target.value)}>
+                {CITIES.map(item => <option key={item}>{item}</option>)}
+              </select>
+            </div>
+
+            <div className="home-category-grid">
+              {CATEGORIES.map(item => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setCat(item.value)}
+                  className={`home-category ${cat === item.value ? 'is-active' : ''}`}
+                >
+                  <span>{item.label}</span>
+                  <small>{item.note}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className="home-dates">
+              <label className="home-field">
+                <span className="home-field__label">Начало</span>
+                <input type="date" value={from} min={today} onChange={e => setFrom(e.target.value)} />
+              </label>
+              <label className="home-field">
+                <span className="home-field__label">Возврат</span>
+                <input type="date" value={to} min={from} onChange={e => setTo(e.target.value)} />
+              </label>
+              <button onClick={search} className="home-search-button">
+                Найти авто
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="label">Категория</label>
-            <select className="input" value={cat} onChange={e => setCat(e.target.value)}>
-              <option value="">Любая</option>
-              <option value="economy">Эконом</option>
-              <option value="comfort">Комфорт</option>
-              <option value="business">Бизнес</option>
-              <option value="suv">Внедорожник</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Дата начала</label>
-            <input type="date" className="input" value={from} onChange={e => setFrom(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Дата окончания</label>
-            <input type="date" className="input" value={to} onChange={e => setTo(e.target.value)} />
-          </div>
-          <button
-            onClick={search}
-            className="bg-[#e94560] text-white font-semibold rounded-xl px-4 h-9 text-sm hover:opacity-90 transition-opacity col-span-2 md:col-span-1"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
-            Найти →
-          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-4 gap-px bg-gray-200 rounded-xl overflow-hidden mx-4 mt-4">
-        {[['247', 'Автомобилей'], ['12', 'Городов'], ['4.9★', 'Рейтинг'], ['24/7', 'Поддержка']].map(([n, l]) => (
-          <div key={l} className="bg-white py-3 text-center">
+      <div className="home-stats">
+        {[['247', 'Автомобилей'], ['12', 'Городов'], ['4.9', 'Рейтинг'], ['24/7', 'Поддержка']].map(([n, l]) => (
+          <div key={l}>
             <div className="font-syne font-extrabold text-xl text-[#e94560]">{n}</div>
             <div className="text-xs text-gray-500 mt-0.5">{l}</div>
           </div>
@@ -80,12 +90,12 @@ export default function HomePage() {
         <h2 className="font-syne font-bold text-xl mb-4">Почему DriveGO?</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {[
-            { icon: '⚡', title: 'Быстро', text: 'Оформите аренду за 5 минут, без звонков и очередей' },
-            { icon: '🔒', title: 'Безопасно', text: 'Защита платежей TLS 1.3, авторизация через Supabase Auth' },
-            { icon: '🚗', title: 'Большой выбор', text: '247 автомобилей в 12 городах — от эконома до бизнеса' },
+            { icon: '01', title: 'Быстро', text: 'Оформите аренду за 5 минут, без звонков и очередей' },
+            { icon: '02', title: 'Безопасно', text: 'Роли, заказы и оплата связаны с Supabase Auth и RLS' },
+            { icon: '03', title: 'Большой выбор', text: 'Города центральной России, разные классы и подробные характеристики' },
           ].map(f => (
             <div key={f.title} className="card p-4">
-              <div className="text-2xl mb-2">{f.icon}</div>
+              <div className="home-feature-num mb-2">{f.icon}</div>
               <div className="font-semibold text-sm mb-1">{f.title}</div>
               <div className="text-xs text-gray-500 leading-relaxed">{f.text}</div>
             </div>

@@ -72,6 +72,7 @@ function mapCar(row: CarRow): Car {
 
 function mapOrder(row: OrderRow): Order {
   const car = row.cars
+  const status = effectiveOrderStatus(row.status, row.date_from, row.date_to)
   return {
     id: row.id,
     carId: row.car_id,
@@ -79,14 +80,23 @@ function mapOrder(row: OrderRow): Order {
     icon: car?.icon ?? '🚗',
     from: row.date_from,
     to: row.date_to,
-    status: row.status ?? 'pending',
+    status,
     total: row.total_price ?? 0,
-    overdueDays: row.status === 'active' && row.date_to < new Date().toISOString().split('T')[0]
+    overdueDays: status === 'active' && row.date_to < new Date().toISOString().split('T')[0]
       ? Math.ceil((Date.now() - new Date(row.date_to).getTime()) / 86400000)
       : 0,
     point: row.pickup_point?.name ?? row.pickup_point?.city ?? '',
     extras: row.extras ?? [],
   }
+}
+
+function effectiveOrderStatus(status: OrderStatus | null, from: string, to: string): OrderStatus {
+  const value = status ?? 'pending'
+  if (value === 'done' || value === 'cancelled') return value
+  const today = new Date().toISOString().split('T')[0]
+  if (from > today) return 'pending'
+  if (from <= today && to >= today && value !== 'pending') return 'active'
+  return value
 }
 
 function profileToUser(profile: ProfileRow): User {
@@ -184,17 +194,20 @@ export async function getAllOrders() {
 
   if (error) throw error
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    client: row.profiles?.full_name ?? 'Клиент',
-    car: row.cars?.name ?? `Автомобиль #${row.car_id}`,
-    dates: `${row.date_from} — ${row.date_to}`,
-    total: row.total_price ?? 0,
-    status: row.status ?? 'pending',
-    overdueDays: row.status === 'active' && row.date_to < new Date().toISOString().split('T')[0]
-      ? Math.ceil((Date.now() - new Date(row.date_to).getTime()) / 86400000)
-      : 0,
-  }))
+  return (data ?? []).map((row: any) => {
+    const status = effectiveOrderStatus(row.status, row.date_from, row.date_to)
+    return {
+      id: row.id,
+      client: row.profiles?.full_name ?? 'Клиент',
+      car: row.cars?.name ?? `Автомобиль #${row.car_id}`,
+      dates: `${row.date_from} — ${row.date_to}`,
+      total: row.total_price ?? 0,
+      status,
+      overdueDays: status === 'active' && row.date_to < new Date().toISOString().split('T')[0]
+        ? Math.ceil((Date.now() - new Date(row.date_to).getTime()) / 86400000)
+        : 0,
+    }
+  })
 }
 
 export async function createBooking(input: {
@@ -223,7 +236,7 @@ export async function createBooking(input: {
       date_from: input.from,
       date_to: input.to,
       total_price: input.total,
-      status: input.paymentMethod === 'cash' ? 'pending' : 'active',
+      status: 'pending',
       extras: input.extras,
     })
     .select()

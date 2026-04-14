@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useApp } from '../hooks/useApp'
+import { logout } from '../lib/api'
 
 const CLIENT_TABS = [
   { path: '/', label: 'Главная' },
@@ -10,10 +11,21 @@ const MANAGER_TABS = [{ path: '/manager', label: 'Менеджер' }]
 const ADMIN_TABS = [{ path: '/admin', label: 'Аналитика' }]
 
 export default function Navbar() {
-  const { user, role } = useApp()
+  const { user, role, setUser, toast } = useApp()
   const navigate = useNavigate()
 
   const tabs = role === 'manager' ? MANAGER_TABS : role === 'admin' ? ADMIN_TABS : CLIENT_TABS
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      setUser(null)
+      toast('Вы вышли из аккаунта')
+      navigate('/')
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Не удалось выйти', 'error')
+    }
+  }
 
   return (
     <nav className="bg-[#1a1a2e] h-12 flex items-center justify-between px-4 sticky top-0 z-50">
@@ -45,6 +57,12 @@ export default function Navbar() {
               className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/80 hover:bg-white/20 transition-all"
             >
               {user.role === 'client' ? 'Клиент' : user.role === 'manager' ? 'Менеджер' : 'Админ'}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-[10px] px-2 py-1 rounded bg-[#e94560] text-white hover:bg-white hover:text-[#1a1a2e] transition-all"
+            >
+              Выйти
             </button>
           </>
         )}
