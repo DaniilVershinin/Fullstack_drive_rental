@@ -33,7 +33,7 @@ type OrderRow = {
   total_price: number | null
   status: OrderStatus | null
   extras: string[] | null
-  pickup_points?: { name: string | null; city: string | null } | null
+  pickup_point?: { name: string | null; city: string | null } | null
   cars?: Pick<CarRow, 'id' | 'name' | 'icon' | 'category'> | null
 }
 
@@ -82,7 +82,7 @@ function mapOrder(row: OrderRow): Order {
     overdueDays: row.status === 'active' && row.date_to < new Date().toISOString().split('T')[0]
       ? Math.ceil((Date.now() - new Date(row.date_to).getTime()) / 86400000)
       : 0,
-    point: row.pickup_points?.name ?? row.pickup_points?.city ?? '',
+    point: row.pickup_point?.name ?? row.pickup_point?.city ?? '',
     extras: row.extras ?? [],
   }
 }
@@ -162,7 +162,7 @@ export async function getMyOrders(userId?: string) {
 
   const { data, error } = await supabase
     .from('orders')
-    .select('*, cars(id, name, icon, category), pickup_points(name, city)')
+    .select('*, cars(id, name, icon, category), pickup_point:pickup_points!orders_pickup_point_id_fkey(name, city)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 

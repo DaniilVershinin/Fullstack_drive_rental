@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../hooks/useApp'
 import { MY_ORDERS, CARS } from '../data'
 import { cancelOrder as cancelOrderInDb, getCars, getMyOrders } from '../lib/api'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { PENALTY } from '../types'
 import type { OrderStatus } from '../types'
 
@@ -17,8 +18,9 @@ export default function CabinetPage() {
   const { user, setUser, toast } = useApp()
   const nav = useNavigate()
   const [tab, setTab] = useState<'orders' | 'active' | 'profile'>('orders')
-  const [orders, setOrders] = useState(MY_ORDERS)
+  const [orders, setOrders] = useState(isSupabaseConfigured ? [] : MY_ORDERS)
   const [cars, setCars] = useState(CARS)
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   // Profile edit state
   const [editName, setEditName] = useState(user?.name.split(' ')[0] || '')
@@ -26,6 +28,16 @@ export default function CabinetPage() {
   const [editPhone, setEditPhone] = useState('+7 (999) 123-45-67')
   const [editDob, setEditDob] = useState(user?.dob || '1990-05-15')
   const [editDl, setEditDl] = useState('77 22 456789')
+
+  useEffect(() => {
+    if (!user) return
+    setOrdersLoading(true)
+    getMyOrders(user.id)
+      .then(setOrders)
+      .catch(error => toast(error instanceof Error ? error.message : 'Не удалось загрузить заказы', 'error'))
+      .finally(() => setOrdersLoading(false))
+    getCars().then(setCars).catch(() => {})
+  }, [user, toast])
 
   if (!user) {
     return (
@@ -37,12 +49,6 @@ export default function CabinetPage() {
       </div>
     )
   }
-
-  useEffect(() => {
-    if (!user) return
-    getMyOrders(user.id).then(setOrders).catch(() => toast('Не удалось загрузить заказы', 'error'))
-    getCars().then(setCars).catch(() => {})
-  }, [user, toast])
 
   const cancelOrder = async (id: string) => {
     const order = orders.find(o => o.id === id)
@@ -121,7 +127,9 @@ export default function CabinetPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayOrders.length === 0 ? (
+                  {ordersLoading ? (
+                    <tr><td colSpan={7} className="text-center py-8 text-gray-400 text-sm">Загружаем заказы...</td></tr>
+                  ) : displayOrders.length === 0 ? (
                     <tr><td colSpan={7} className="text-center py-8 text-gray-400 text-sm">Нет заказов</td></tr>
                   ) : displayOrders.map(o => {
                     const car = cars.find(c => c.id === o.carId)
