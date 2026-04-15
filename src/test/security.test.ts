@@ -6,10 +6,10 @@ describe('security helpers', () => {
     expect(escapeXml('<img src=x onerror=alert(1)>&"\'')).toBe('&lt;img src=x onerror=alert(1)&gt;&amp;&quot;&#39;')
   })
 
-  it('drops non-https or untrusted remote image URLs', () => {
+  it('drops non-https remote image URLs', () => {
     expect(safeRemoteImageUrl('javascript:alert(1)')).toBe('')
     expect(safeRemoteImageUrl('http://example.com/car.jpg')).toBe('')
-    expect(safeRemoteImageUrl('https://example.com/car.jpg')).toBe('')
+    expect(safeRemoteImageUrl('https://example.com/car.jpg')).toBe('https://example.com/car.jpg')
     expect(safeRemoteImageUrl('https://images.unsplash.com/car.jpg')).toBe('https://images.unsplash.com/car.jpg')
     expect(safeRemoteImageUrl('https://demo.supabase.co/storage/v1/object/public/cars/a.jpg')).toBe('https://demo.supabase.co/storage/v1/object/public/cars/a.jpg')
   })

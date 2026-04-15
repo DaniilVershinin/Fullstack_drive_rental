@@ -1,10 +1,5 @@
 const MAX_LABEL_LENGTH = 120
-const TRUSTED_IMAGE_HOSTS = new Set(['source.unsplash.com', 'images.unsplash.com'])
 const CSRF_STORAGE_KEY = 'drivego.csrf'
-
-function isTrustedImageHost(hostname: string) {
-  return TRUSTED_IMAGE_HOSTS.has(hostname) || hostname.endsWith('.supabase.co')
-}
 
 export function escapeXml(value: string) {
   return value
@@ -25,7 +20,6 @@ export function safeRemoteImageUrl(value: unknown) {
   try {
     const url = new URL(value)
     if (url.protocol !== 'https:') return ''
-    if (!isTrustedImageHost(url.hostname)) return ''
     return url.toString()
   } catch {
     return ''
