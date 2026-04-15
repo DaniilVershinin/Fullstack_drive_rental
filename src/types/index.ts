@@ -30,6 +30,15 @@ export interface Extra {
   price: number
 }
 
+export interface PickupPoint {
+  id: number
+  name: string
+  address: string
+  city: string
+  hours: string
+  phone?: string
+}
+
 export interface Order {
   id: string
   carId: number

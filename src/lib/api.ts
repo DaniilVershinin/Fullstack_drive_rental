@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { ALL_ORDERS, CARS, EXTRAS, EXISTING_BOOKINGS, MY_ORDERS, PICKUP_POINTS, USERS } from '../data'
-import type { AuthUser, Car, CarCategory, CarStatus, Extra, Order, OrderStatus, Role, User } from '../types'
+import type { AuthUser, Car, CarCategory, CarStatus, Extra, Order, OrderStatus, PickupPoint, Role, User } from '../types'
 
 type CarRow = {
   id: number
@@ -24,7 +24,7 @@ type CarRow = {
 }
 
 type ExtraRow = { id: string; name: string | null; price_per_day: number | null }
-type PickupPointRow = { id: number; name: string | null; address: string | null; city: string | null }
+type PickupPointRow = { id: number; name: string | null; address: string | null; city: string | null; hours?: string | null; phone?: string | null }
 
 type OrderRow = {
   id: string
@@ -44,6 +44,8 @@ type ProfileRow = {
   email: string | null
   role: Role | null
   dob: string | null
+  phone?: string | null
+  driver_license?: string | null
   orders_count?: number | null
 }
 
@@ -67,6 +69,39 @@ function mapCar(row: CarRow): Car {
     color: row.color ?? undefined,
     trunkVolume: row.trunk_volume ?? undefined,
     photoUrl: row.photo_url ?? undefined,
+  }
+}
+
+function carToRow(car: Partial<Car>) {
+  return {
+    name: car.name,
+    year: car.year,
+    category: car.cat,
+    price_per_day: car.price,
+    status: car.status,
+    icon: car.icon,
+    fuel: car.fuel,
+    transmission: car.transmission,
+    seats: car.seats,
+    city: car.city,
+    drive: car.drive,
+    horsepower: car.horsepower,
+    engine_volume: car.engineVolume,
+    body_type: car.bodyType,
+    color: car.color,
+    trunk_volume: car.trunkVolume,
+    photo_url: car.photoUrl,
+  }
+}
+
+function mapPickupPoint(row: PickupPointRow): PickupPoint {
+  return {
+    id: row.id,
+    name: row.name ?? '',
+    address: row.address ?? '',
+    city: row.city ?? '',
+    hours: row.hours ?? '09:00-20:00',
+    phone: row.phone ?? undefined,
   }
 }
 
@@ -153,6 +188,81 @@ export async function getPickupPoints() {
   const { data, error } = await supabase.from('pickup_points').select('*').order('city').order('name')
   if (error) throw error
   return (data as PickupPointRow[]).map(point => `${point.city ?? ''} — ${point.name ?? ''}${point.address ? ` (${point.address})` : ''}`)
+}
+
+export async function getPickupPointRows(): Promise<PickupPoint[]> {
+  if (!isSupabaseConfigured) {
+    return PICKUP_POINTS.map((point, index) => {
+      const [city = '', rest = ''] = point.split(' — ')
+      const name = rest.replace(/\s*\(.+\)\s*$/, '')
+      const address = rest.match(/\((.+)\)/)?.[1] ?? name
+      return { id: index + 1, city, name, address, hours: index === 1 ? '24/7' : '09:00-20:00' }
+    })
+  }
+
+  const { data, error } = await supabase.from('pickup_points').select('*').order('city').order('name')
+  if (error) throw error
+  return (data as PickupPointRow[]).map(mapPickupPoint)
+}
+
+export async function savePickupPoint(point: Partial<PickupPoint>): Promise<PickupPoint> {
+  const payload = {
+    name: point.name,
+    address: point.address,
+    city: point.city,
+    hours: point.hours ?? '09:00-20:00',
+    phone: point.phone,
+  }
+
+  if (!isSupabaseConfigured) {
+    return { id: point.id ?? Date.now(), name: payload.name ?? '', address: payload.address ?? '', city: payload.city ?? '', hours: payload.hours, phone: payload.phone }
+  }
+
+  const query = point.id
+    ? supabase.from('pickup_points').update(payload).eq('id', point.id).select().single()
+    : supabase.from('pickup_points').insert(payload).select().single()
+  const { data, error } = await query
+  if (error) throw error
+  return mapPickupPoint(data as PickupPointRow)
+}
+
+export async function saveCar(car: Partial<Car>): Promise<Car> {
+  const payload = carToRow(car)
+  if (!isSupabaseConfigured) {
+    return {
+      id: car.id ?? Date.now(),
+      name: car.name ?? 'Новый автомобиль',
+      year: car.year ?? new Date().getFullYear(),
+      cat: car.cat ?? 'economy',
+      price: car.price ?? 0,
+      status: car.status ?? 'available',
+      icon: car.icon ?? '🚗',
+      fuel: car.fuel ?? 'Бензин',
+      transmission: car.transmission ?? 'Автомат',
+      seats: car.seats ?? 5,
+      city: car.city ?? '',
+      drive: car.drive,
+      horsepower: car.horsepower,
+      engineVolume: car.engineVolume,
+      bodyType: car.bodyType,
+      color: car.color,
+      trunkVolume: car.trunkVolume,
+      photoUrl: car.photoUrl,
+    }
+  }
+
+  const query = car.id
+    ? supabase.from('cars').update(payload).eq('id', car.id).select().single()
+    : supabase.from('cars').insert(payload).select().single()
+  const { data, error } = await query
+  if (error) throw error
+  return mapCar(data as CarRow)
+}
+
+export async function updateCarStatus(carId: number, status: CarStatus) {
+  if (!isSupabaseConfigured) return
+  const { error } = await supabase.from('cars').update({ status }).eq('id', carId)
+  if (error) throw error
 }
 
 export async function getExistingBookings(carId?: number) {
@@ -278,6 +388,35 @@ export async function getUsers() {
 
   if (error) throw error
   return (data as ProfileRow[]).map(profileToUser)
+}
+
+export async function updateProfile(input: { id: string; fullName: string; dob: string; phone?: string; driverLicense?: string }): Promise<AuthUser> {
+  if (!isSupabaseConfigured) {
+    const [first = '', second = ''] = input.fullName.split(' ')
+    return {
+      id: input.id,
+      name: input.fullName,
+      email: '',
+      initials: `${first[0] ?? '?'}${second[0] ?? ''}`.toUpperCase(),
+      dob: input.dob,
+      role: 'client',
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      full_name: input.fullName,
+      dob: input.dob || null,
+      phone: input.phone,
+      driver_license: input.driverLicense,
+    })
+    .eq('id', input.id)
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return toAuthUser(input.id, (data as ProfileRow).email ?? '', data as ProfileRow)
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {

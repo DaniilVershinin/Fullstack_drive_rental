@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CARS } from '../data'
 import BookingModal from '../components/BookingModal'
@@ -7,6 +7,20 @@ import { useApp } from '../hooks/useApp'
 import { getCars } from '../lib/api'
 import type { Car } from '../types'
 
+type SortKey = 'priceAsc' | 'priceDesc' | 'name' | 'yearDesc' | 'powerDesc'
+
+const cats = [
+  { value: '', label: 'Все' },
+  { value: 'economy', label: 'Эконом' },
+  { value: 'comfort', label: 'Комфорт' },
+  { value: 'business', label: 'Бизнес' },
+  { value: 'suv', label: 'Внедорожник' },
+]
+
+function unique(values: Array<string | undefined>) {
+  return [...new Set(values.filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'ru'))
+}
+
 export default function CatalogPage() {
   const { user, toast } = useApp()
   const nav = useNavigate()
@@ -14,9 +28,14 @@ export default function CatalogPage() {
 
   const [catFilter, setCatFilter] = useState<string>(params.get('cat') || '')
   const [cityFilter, setCityFilter] = useState(params.get('city') || '')
+  const [fuelFilter, setFuelFilter] = useState('')
+  const [transmissionFilter, setTransmissionFilter] = useState('')
+  const [driveFilter, setDriveFilter] = useState('')
+  const [minPower, setMinPower] = useState(0)
   const [maxPrice, setMaxPrice] = useState(10000)
   const [statusFilter, setStatusFilter] = useState<'all' | 'available'>('all')
-  const [sortBy, setSortBy] = useState<'pa' | 'pd' | 'nm'>('pa')
+  const [sortBy, setSortBy] = useState<SortKey>('priceAsc')
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [bookingCar, setBookingCar] = useState<Car | null>(null)
   const [cars, setCars] = useState<Car[]>(CARS)
   const [loading, setLoading] = useState(false)
@@ -29,19 +48,34 @@ export default function CatalogPage() {
       .finally(() => setLoading(false))
   }, [toast])
 
+  const cities = useMemo(() => unique(cars.map(car => car.city)), [cars])
+  const fuels = useMemo(() => unique(cars.map(car => car.fuel)), [cars])
+  const transmissions = useMemo(() => unique(cars.map(car => car.transmission)), [cars])
+  const drives = useMemo(() => unique(cars.map(car => car.drive)), [cars])
+
   const filtered = useMemo(() => {
-    let list = cars.filter(c => {
-      if (catFilter && c.cat !== catFilter) return false
-      if (cityFilter && c.city !== cityFilter) return false
-      if (c.price > maxPrice) return false
-      if (statusFilter === 'available' && c.status !== 'available') return false
+    const list = cars.filter(car => {
+      if (catFilter && car.cat !== catFilter) return false
+      if (cityFilter && car.city !== cityFilter) return false
+      if (fuelFilter && car.fuel !== fuelFilter) return false
+      if (transmissionFilter && car.transmission !== transmissionFilter) return false
+      if (driveFilter && car.drive !== driveFilter) return false
+      if ((car.horsepower ?? 0) < minPower) return false
+      if (car.price > maxPrice) return false
+      if (statusFilter === 'available' && car.status !== 'available') return false
       return true
     })
-    if (sortBy === 'pa') list = [...list].sort((a, b) => a.price - b.price)
-    else if (sortBy === 'pd') list = [...list].sort((a, b) => b.price - a.price)
-    else list = [...list].sort((a, b) => a.name.localeCompare(b.name))
-    return list
-  }, [cars, catFilter, cityFilter, maxPrice, statusFilter, sortBy])
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'priceAsc') return a.price - b.price
+      if (sortBy === 'priceDesc') return b.price - a.price
+      if (sortBy === 'yearDesc') return b.year - a.year
+      if (sortBy === 'powerDesc') return (b.horsepower ?? 0) - (a.horsepower ?? 0)
+      return a.name.localeCompare(b.name, 'ru')
+    })
+  }, [cars, catFilter, cityFilter, driveFilter, fuelFilter, maxPrice, minPower, sortBy, statusFilter, transmissionFilter])
+
+  const activeFilters = [catFilter, cityFilter, fuelFilter, transmissionFilter, driveFilter, minPower ? 'power' : '', statusFilter === 'available' ? 'status' : ''].filter(Boolean).length
 
   const handleBook = (car: Car) => {
     if (!user) { toast('Войдите в аккаунт для бронирования', 'error'); nav('/auth'); return }
@@ -50,150 +84,181 @@ export default function CatalogPage() {
   }
 
   const resetFilters = () => {
-    setCatFilter(''); setCityFilter(''); setMaxPrice(10000); setStatusFilter('all'); setSortBy('pa')
+    setCatFilter('')
+    setCityFilter('')
+    setFuelFilter('')
+    setTransmissionFilter('')
+    setDriveFilter('')
+    setMinPower(0)
+    setMaxPrice(10000)
+    setStatusFilter('all')
+    setSortBy('priceAsc')
     toast('Фильтры сброшены')
   }
 
-  const cats: { value: string; label: string }[] = [
-    { value: '', label: 'Все' },
-    { value: 'economy', label: 'Эконом' },
-    { value: 'comfort', label: 'Комфорт' },
-    { value: 'business', label: 'Бизнес' },
-    { value: 'suv', label: 'Внедорожник' },
-  ]
+  const filters = (
+    <div className="catalog-filter-panel">
+      <div className="catalog-filter-head">
+        <div>
+          <div className="font-syne font-bold text-sm">Фильтры</div>
+          <div className="text-[11px] text-gray-500">{activeFilters ? `${activeFilters} активно` : 'подберите авто'}</div>
+        </div>
+        <button type="button" className="catalog-filter-close md:hidden" onClick={() => setFiltersOpen(false)}>×</button>
+      </div>
+
+      <label className="catalog-filter-field">
+        <span>Город</span>
+        <select value={cityFilter} onChange={e => setCityFilter(e.target.value)}>
+          <option value="">Все города</option>
+          {cities.map(city => <option key={city}>{city}</option>)}
+        </select>
+      </label>
+
+      <div className="catalog-filter-field">
+        <span>Категория</span>
+        <div className="catalog-chip-list">
+          {cats.map(cat => (
+            <button key={cat.value} type="button" className={catFilter === cat.value ? 'is-active' : ''} onClick={() => setCatFilter(cat.value)}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <label className="catalog-filter-field">
+        <span>Топливо</span>
+        <select value={fuelFilter} onChange={e => setFuelFilter(e.target.value)}>
+          <option value="">Любое</option>
+          {fuels.map(fuel => <option key={fuel}>{fuel}</option>)}
+        </select>
+      </label>
+
+      <label className="catalog-filter-field">
+        <span>Коробка</span>
+        <select value={transmissionFilter} onChange={e => setTransmissionFilter(e.target.value)}>
+          <option value="">Любая</option>
+          {transmissions.map(item => <option key={item}>{item}</option>)}
+        </select>
+      </label>
+
+      <label className="catalog-filter-field">
+        <span>Привод</span>
+        <select value={driveFilter} onChange={e => setDriveFilter(e.target.value)}>
+          <option value="">Любой</option>
+          {drives.map(drive => <option key={drive}>{drive}</option>)}
+        </select>
+      </label>
+
+      <div className="catalog-filter-field">
+        <span>Мощность от {minPower || 'любой'} л.с.</span>
+        <input type="range" min={0} max={350} step={25} value={minPower} onChange={e => setMinPower(Number(e.target.value))} />
+      </div>
+
+      <div className="catalog-filter-field">
+        <span>Цена до {maxPrice.toLocaleString('ru')} ₽/сут</span>
+        <input type="range" min={1500} max={12000} step={500} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} />
+      </div>
+
+      <div className="catalog-filter-field">
+        <span>Доступность</span>
+        <div className="catalog-chip-list">
+          {[{ v: 'all', l: 'Все' }, { v: 'available', l: 'Свободные' }].map(item => (
+            <button key={item.v} type="button" className={statusFilter === item.v ? 'is-active' : ''} onClick={() => setStatusFilter(item.v as 'all' | 'available')}>
+              {item.l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button type="button" onClick={resetFilters} className="catalog-reset">Сбросить фильтры</button>
+    </div>
+  )
 
   return (
-    <div className="flex gap-4 p-4">
-      <aside className="w-48 shrink-0">
-        <div className="card p-3 sticky top-16">
-          <div className="font-syne font-bold text-sm mb-3">Фильтры</div>
-
-          <div className="mb-4">
-            <div className="label">Город</div>
-            <select className="input" value={cityFilter} onChange={e => setCityFilter(e.target.value)}>
-              <option value="">Все города</option>
-              <option>Москва</option>
-              <option>Санкт-Петербург</option>
-              <option>Казань</option>
-              <option>Новосибирск</option>
-              <option>Воронеж</option>
-              <option>Белгород</option>
-              <option>Старый Оскол</option>
-              <option>Липецк</option>
-              <option>Елец</option>
-              <option>Борисоглебск</option>
-              <option>Россошь</option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <div className="label">Категория</div>
-            {cats.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setCatFilter(c.value)}
-                className={`block w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium border-2 mb-1.5 transition-all
-                  ${catFilter === c.value ? 'border-[#e94560] bg-[#e94560] text-white' : 'border-gray-200 text-gray-500 hover:border-[#0f3460] hover:text-[#0f3460]'}`}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mb-4">
-            <div className="label">Макс. цена/сут</div>
-            <input
-              type="range" min={1500} max={10000} step={500} value={maxPrice}
-              onChange={e => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-[#e94560]"
-            />
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>1 500 ₽</span>
-              <span className="font-medium text-gray-600">{maxPrice.toLocaleString('ru')} ₽</span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <div className="label">Доступность</div>
-            {[{ v: 'all', l: 'Все' }, { v: 'available', l: 'Только свободные' }].map(s => (
-              <button
-                key={s.v}
-                onClick={() => setStatusFilter(s.v as any)}
-                className={`block w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium border-2 mb-1.5 transition-all
-                  ${statusFilter === s.v ? 'border-[#e94560] bg-[#e94560] text-white' : 'border-gray-200 text-gray-500 hover:border-[#0f3460]'}`}
-              >
-                {s.l}
-              </button>
-            ))}
-          </div>
-
-          <button onClick={resetFilters} className="w-full py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50">
-            Сбросить фильтры
-          </button>
+    <div className="catalog-page">
+      <div className="catalog-toolbar">
+        <div>
+          <div className="font-syne font-extrabold text-2xl">Каталог автомобилей</div>
+          <div className="text-sm text-gray-500">{filtered.length} автомобилей из {cars.length}</div>
         </div>
-      </aside>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-sm text-gray-500">{filtered.length} автомобилей</span>
-          <select className="input w-auto text-xs" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-            <option value="pa">Цена ↑</option>
-            <option value="pd">Цена ↓</option>
-            <option value="nm">По названию</option>
+        <div className="catalog-toolbar-actions">
+          <button type="button" className="catalog-mobile-filter" onClick={() => setFiltersOpen(true)}>
+            Фильтры {activeFilters ? `(${activeFilters})` : ''}
+          </button>
+          <select className="input w-auto text-xs" value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)}>
+            <option value="priceAsc">Цена ↑</option>
+            <option value="priceDesc">Цена ↓</option>
+            <option value="yearDesc">Сначала новые</option>
+            <option value="powerDesc">Мощнее</option>
+            <option value="name">По названию</option>
           </select>
         </div>
-
-        {loading && cars.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <div className="text-sm">Загружаем автомобили...</div>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <div className="text-5xl mb-3">🔎</div>
-            <div className="text-sm">Ничего не найдено. Измените фильтры.</div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {filtered.map(car => (
-              <div
-                key={car.id}
-                className="card overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all"
-                onClick={() => nav(`/car/${car.id}`)}
-              >
-                <div className="car-card-photo relative">
-                  <CarImage car={car} className="h-full w-full" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
-                  <span className="absolute bottom-2 left-2 text-xl">{car.icon}</span>
-                  <span className={`absolute top-2 right-2 badge ${car.status === 'available' ? 'badge-green' : 'badge-red'}`}>
-                    {car.status === 'available' ? 'Доступен' : 'Занят'}
-                  </span>
-                </div>
-                <div className="p-3">
-                  <div className="font-syne font-bold text-sm mb-0.5">{car.name}</div>
-                  <div className="text-xs text-gray-500 mb-2">{car.year} · {car.fuel} · {car.city}</div>
-                  <div className="car-specs-mini">
-                    <span>{car.horsepower ? `${car.horsepower} л.с.` : 'мощность —'}</span>
-                    <span>{car.engineVolume ?? 'объем —'}</span>
-                    <span>{car.drive ?? 'привод —'}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="font-syne font-extrabold text-sm">
-                      {car.price.toLocaleString('ru')} ₽<span className="text-xs font-normal text-gray-400">/сут</span>
-                    </div>
-                    <button
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${car.status === 'available' ? 'bg-[#1a1a2e] text-white hover:bg-[#e94560]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                      onClick={e => { e.stopPropagation(); handleBook(car) }}
-                      disabled={car.status === 'busy'}
-                    >
-                      {car.status === 'available' ? 'Бронировать' : 'Занят'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      <div className="catalog-layout">
+        <aside className={`catalog-aside ${filtersOpen ? 'is-open' : ''}`}>
+          {filters}
+        </aside>
+
+        <main className="catalog-results">
+          {loading && cars.length === 0 ? (
+            <div className="catalog-grid">
+              {Array.from({ length: 6 }).map((_, index) => <div key={index} className="catalog-skeleton" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="catalog-empty">
+              <div className="catalog-empty-icon">⌕</div>
+              <div className="font-syne font-bold text-lg">Авто не найдено</div>
+              <p>Попробуйте убрать часть фильтров или выбрать другой город.</p>
+              <button type="button" onClick={resetFilters}>Сбросить фильтры</button>
+            </div>
+          ) : (
+            <div className="catalog-grid">
+              {filtered.map((car, index) => (
+                <article key={car.id} className="catalog-car-card" onClick={() => nav(`/car/${car.id}`)}>
+                  <div className="car-card-photo relative">
+                    <CarImage car={car} className="h-full w-full" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                    <span className="catalog-card-index">{String(index + 1).padStart(2, '0')}</span>
+                    <span className={`absolute top-2 right-2 badge ${car.status === 'available' ? 'badge-green' : 'badge-red'}`}>
+                      {car.status === 'available' ? 'Доступен' : 'Занят'}
+                    </span>
+                  </div>
+                  <div className="p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-syne font-bold text-sm">{car.name}</div>
+                        <div className="text-xs text-gray-500">{car.year} · {car.fuel} · {car.city}</div>
+                      </div>
+                      <span className="catalog-card-tag">{cats.find(cat => cat.value === car.cat)?.label}</span>
+                    </div>
+                    <div className="car-specs-mini">
+                      <span>{car.horsepower ? `${car.horsepower} л.с.` : 'мощность —'}</span>
+                      <span>{car.engineVolume ?? 'объем —'}</span>
+                      <span>{car.drive ?? 'привод —'}</span>
+                    </div>
+                    <div className="catalog-card-footer">
+                      <div className="font-syne font-extrabold text-base">
+                        {car.price.toLocaleString('ru')} ₽<span>/сут</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={car.status === 'available' ? 'catalog-book-btn' : 'catalog-book-btn is-disabled'}
+                        onClick={event => { event.stopPropagation(); handleBook(car) }}
+                        disabled={car.status === 'busy'}
+                      >
+                        {car.status === 'available' ? 'Бронировать' : 'Занят'}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {filtersOpen && <button className="catalog-filter-backdrop" type="button" onClick={() => setFiltersOpen(false)} aria-label="Закрыть фильтры" />}
 
       {bookingCar && (
         <BookingModal
