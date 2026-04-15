@@ -1,4 +1,5 @@
 import type { Car } from '../types'
+import { escapeXml, safeLabel, safeRemoteImageUrl } from './security'
 
 const modelQueries: Record<string, string> = {
   'Kia Rio': 'kia rio sedan car',
@@ -20,8 +21,11 @@ const modelQueries: Record<string, string> = {
 }
 
 export function carImage(car: Pick<Car, 'name' | 'photoUrl'>, size = '900x600') {
-  if (car.photoUrl) return car.photoUrl
-  const query = encodeURIComponent(modelQueries[car.name] ?? `${car.name} car`)
+  const safePhotoUrl = safeRemoteImageUrl(car.photoUrl)
+  if (safePhotoUrl) return safePhotoUrl
+
+  const safeName = safeLabel(car.name, 'car')
+  const query = encodeURIComponent(modelQueries[safeName] ?? `${safeName} car`)
   return `https://source.unsplash.com/${size}/?${query}`
 }
 
@@ -41,7 +45,7 @@ export function carFallbackImage(car: Pick<Car, 'name' | 'cat' | 'color' | 'body
   )
   const roofY = car.cat === 'suv' || car.bodyType === 'Кроссовер' ? 70 : 84
   const roofH = car.cat === 'suv' || car.bodyType === 'Кроссовер' ? 58 : 46
-  const label = car.name.replace(/&/g, '&amp;')
+  const label = escapeXml(safeLabel(car.name, 'Автомобиль'))
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
       <defs>

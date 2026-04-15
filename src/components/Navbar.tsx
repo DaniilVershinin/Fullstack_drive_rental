@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useApp } from '../hooks/useApp'
 import { logout } from '../lib/api'
+import { clearCsrfToken } from '../lib/security'
 
 const CLIENT_TABS = [
   { path: '/', label: 'Главная' },
@@ -11,7 +12,7 @@ const MANAGER_TABS = [{ path: '/manager', label: 'Менеджер' }]
 const ADMIN_TABS = [{ path: '/admin', label: 'Аналитика' }]
 
 export default function Navbar() {
-  const { user, role, setUser, toast } = useApp()
+  const { user, role, setUser, toast, rotateCsrf } = useApp()
   const navigate = useNavigate()
 
   const tabs = role === 'manager' ? MANAGER_TABS : role === 'admin' ? ADMIN_TABS : CLIENT_TABS
@@ -19,6 +20,8 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await logout()
+      clearCsrfToken()
+      rotateCsrf()
       setUser(null)
       toast('Вы вышли из аккаунта')
       navigate('/')

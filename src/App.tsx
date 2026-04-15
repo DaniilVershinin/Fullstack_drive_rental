@@ -9,10 +9,11 @@ import CarDetailPage from './pages/CarDetailPage'
 import CabinetPage from './pages/CabinetPage'
 import ManagerPage from './pages/ManagerPage'
 import AdminPage from './pages/AdminPage'
+import type { Role } from './types'
 
-function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
+function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const { user, role } = useApp()
-  if (!user && roles?.includes('client')) return <Navigate to="/auth" replace />
+  if (!user) return <Navigate to="/auth" replace />
   if (roles && !roles.includes(role)) return <Navigate to="/" replace />
   return <>{children}</>
 }
@@ -26,7 +27,7 @@ function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/car/:id" element={<CarDetailPage />} />
-        <Route path="/cabinet" element={<CabinetPage />} />
+        <Route path="/cabinet" element={<ProtectedRoute roles={['client', 'manager', 'admin']}><CabinetPage /></ProtectedRoute>} />
         <Route path="/manager" element={<ProtectedRoute roles={['manager']}><ManagerPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />

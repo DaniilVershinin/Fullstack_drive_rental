@@ -64,7 +64,7 @@ function BarChart({ vals, labels, max, accentLast = false, accentHigh = false }:
 }
 
 export default function AdminPage() {
-  const { toast } = useApp()
+  const { toast, csrfToken } = useApp()
   const [tab, setTab] = useState<'analytics' | 'cars' | 'users' | 'points' | 'tariffs'>('analytics')
   const [userSearch, setUserSearch] = useState('')
   const [userRole, setUserRole] = useState('')
@@ -100,7 +100,7 @@ export default function AdminPage() {
     }
     setSavingCar(true)
     try {
-      const saved = await saveCar(carDraft)
+      const saved = await saveCar(carDraft, { csrfToken })
       setCars(prev => carDraft.id ? prev.map(car => car.id === saved.id ? saved : car) : [saved, ...prev])
       setCarDraft(emptyCar)
       toast('Автомобиль сохранен')
@@ -118,7 +118,7 @@ export default function AdminPage() {
     }
     setSavingPoint(true)
     try {
-      const saved = await savePickupPoint(pointDraft)
+      const saved = await savePickupPoint(pointDraft, { csrfToken })
       setPoints(prev => pointDraft.id ? prev.map(point => point.id === saved.id ? saved : point) : [saved, ...prev])
       setPointDraft(emptyPoint)
       toast('Пункт выдачи сохранен')

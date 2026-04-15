@@ -9,8 +9,9 @@ describe('App main flows', () => {
 
     render(<App />)
 
-    expect(await screen.findByText(/Аренда авто/i)).toBeInTheDocument()
+    expect(await screen.findByText(/DriveGO ID/i)).toBeInTheDocument()
     expect(screen.queryByText(/Панель менеджера/i)).not.toBeInTheDocument()
+    expect(window.location.pathname).toBe('/auth')
   })
 
   it('logs in through the auth page and returns to the home page', async () => {

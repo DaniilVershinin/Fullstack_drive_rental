@@ -32,7 +32,7 @@ function isFuture(order: Order) {
 }
 
 export default function CabinetPage() {
-  const { user, setUser, toast } = useApp()
+  const { user, setUser, toast, csrfToken } = useApp()
   const nav = useNavigate()
   const [tab, setTab] = useState<Tab>('current')
   const [orders, setOrders] = useState<Order[]>(isSupabaseConfigured ? [] : MY_ORDERS)
@@ -95,7 +95,7 @@ export default function CabinetPage() {
     }
     if (!window.confirm(`Отменить бронирование ${id}?`)) return
     try {
-      await cancelOrderInDb(id)
+      await cancelOrderInDb(id, { csrfToken })
       setOrders(prev => prev.map(item => item.id === id ? { ...item, status: 'cancelled' as const } : item))
       toast(`Бронирование ${id} отменено`)
     } catch (error) {
@@ -120,13 +120,16 @@ export default function CabinetPage() {
 
     setProfileSaving(true)
     try {
-      const updated = await updateProfile({
-        id: user.id,
-        fullName: `${editName} ${editSurname}`.trim(),
-        dob: editDob,
-        phone: editPhone,
-        driverLicense: editDl,
-      })
+      const updated = await updateProfile(
+        {
+          id: user.id,
+          fullName: `${editName} ${editSurname}`.trim(),
+          dob: editDob,
+          phone: editPhone,
+          driverLicense: editDl,
+        },
+        { csrfToken },
+      )
       setUser({ ...user, ...updated, email: updated.email || user.email, role: updated.role || user.role })
       toast('Профиль сохранён')
     } catch (error) {

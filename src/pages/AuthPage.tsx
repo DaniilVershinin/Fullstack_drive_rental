@@ -39,7 +39,7 @@ function roleLabel(role: Role) {
 }
 
 export default function AuthPage() {
-  const { setUser, toast } = useApp()
+  const { setUser, toast, rotateCsrf } = useApp()
   const nav = useNavigate()
   const [mode, setMode] = useState<'login' | 'reg'>('login')
 
@@ -64,6 +64,7 @@ export default function AuthPage() {
         : DEMO_ACCOUNTS.find(acc => acc.email.toLowerCase() === email.toLowerCase().trim() && acc.password === pass)
       if (!account) { setGlobalErr('Неверный email или пароль'); return }
 
+      rotateCsrf()
       setUser(account)
       toast(`Добро пожаловать, ${account.name.split(' ')[0]}! Роль: ${roleLabel(account.role)}`)
       nav(account.role === 'manager' ? '/manager' : account.role === 'admin' ? '/admin' : '/')
@@ -90,6 +91,7 @@ export default function AuthPage() {
       const account = isSupabaseConfigured
         ? await register({ email: regEmail, password: regPass, name, surname, dob, phone, dl })
         : { name: `${name} ${surname}`.trim(), email: regEmail, initials, dob, role: 'client' as const }
+      rotateCsrf()
       setUser(account)
       toast(`Аккаунт создан! Письмо отправлено на ${regEmail}`)
       nav('/')

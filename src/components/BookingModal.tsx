@@ -16,7 +16,7 @@ function formatCard(v: string) {
 }
 
 export default function BookingModal({ car, onClose, onBooked }: Props) {
-  const { user, toast } = useApp()
+  const { user, toast, csrfToken } = useApp()
   const today = new Date().toISOString().split('T')[0]
   const in3 = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0]
 
@@ -83,17 +83,20 @@ export default function BookingModal({ car, onClose, onBooked }: Props) {
       if (!cardName.trim()) { toast('Введите имя на карте', 'error'); return }
     }
     try {
-      const orderId = await createBooking({
-        userId: user?.id,
-        car,
-        from,
-        to,
-        total,
-        extras: selectedExtras,
-        pickupPoint: point,
-        returnPoint,
-        paymentMethod: payMethod,
-      })
+      const orderId = await createBooking(
+        {
+          userId: user?.id,
+          car,
+          from,
+          to,
+          total,
+          extras: selectedExtras,
+          pickupPoint: point,
+          returnPoint,
+          paymentMethod: payMethod,
+        },
+        { csrfToken },
+      )
       setDone(true)
       setStep(4)
       toast('Заказ оформлен! Подтверждение отправлено на email', 'success')

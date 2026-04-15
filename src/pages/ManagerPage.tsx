@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ALL_ORDERS, CARS } from '../data'
+import { useApp } from '../hooks/useApp'
 import { getAllOrders, getCars, updateCarStatus, updateOrderStatus } from '../lib/api'
 import type { ManagerOrder } from '../data'
 import type { Car, CarStatus, OrderStatus } from '../types'
@@ -11,6 +12,7 @@ const STATUS_LABEL: Record<string, string> = { pending: 'Ожидает', active
 const STATUS_CLASS: Record<string, string> = { pending: 'badge-yellow', active: 'badge-green', done: 'badge-gray', cancelled: 'badge-red' }
 
 export default function ManagerPage() {
+  const { csrfToken } = useApp()
   const [tab, setTab] = useState<Tab>('orders')
   const [orders, setOrders] = useState<ManagerOrder[]>(ALL_ORDERS)
   const [cars, setCars] = useState<Car[]>(CARS)
@@ -41,7 +43,7 @@ export default function ManagerPage() {
     const previous = orders
     setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order))
     try {
-      await updateOrderStatus(id, status)
+      await updateOrderStatus(id, status, { csrfToken })
     } catch {
       setOrders(previous)
     }
@@ -51,7 +53,7 @@ export default function ManagerPage() {
     const previous = cars
     setCars(prev => prev.map(item => item.id === car.id ? { ...item, status } : item))
     try {
-      await updateCarStatus(car.id, status)
+      await updateCarStatus(car.id, status, { csrfToken })
     } catch {
       setCars(previous)
     }

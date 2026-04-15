@@ -75,6 +75,18 @@ create table if not exists public.payments (
   paid_at timestamptz
 );
 
+do $$ begin alter table public.profiles add constraint profiles_email_not_empty check (length(trim(email)) > 3); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.profiles add constraint profiles_full_name_not_empty check (length(trim(full_name)) > 0); exception when duplicate_object then null; end $$;
+
+do $$ begin alter table public.cars add constraint cars_year_reasonable check (year between 1990 and extract(year from now())::int + 1); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.cars add constraint cars_price_positive check (price_per_day > 0); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.cars add constraint cars_seats_reasonable check (seats between 1 and 9); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.cars add constraint cars_photo_url_https check (photo_url is null or photo_url ~ '^https://'); exception when duplicate_object then null; end $$;
+
+do $$ begin alter table public.extras add constraint extras_price_non_negative check (price_per_day >= 0); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.orders add constraint orders_total_non_negative check (total_price >= 0); exception when duplicate_object then null; end $$;
+do $$ begin alter table public.payments add constraint payments_amount_non_negative check (amount >= 0); exception when duplicate_object then null; end $$;
+
 create or replace function public.current_role()
 returns public.user_role
 language sql
@@ -97,7 +109,7 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
     new.email,
-    coalesce(new.raw_user_meta_data->>'role', 'client')::public.user_role,
+    'client'::public.user_role,
     nullif(new.raw_user_meta_data->>'dob', '')::date,
     new.raw_user_meta_data->>'phone',
     new.raw_user_meta_data->>'driver_license'
@@ -105,13 +117,132 @@ begin
   on conflict (id) do update set
     full_name = excluded.full_name,
     email = excluded.email,
-    role = excluded.role,
     dob = excluded.dob,
     phone = excluded.phone,
     driver_license = excluded.driver_license;
   return new;
 end;
 $$;
+
+create or replace function public.enforce_profile_security()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'UPDATE' and new.role is distinct from old.role and public.current_role() <> 'admin' then
+    raise exception 'Only admins can change profile roles';
+  end if;
+
+  if new.email <> lower(trim(new.email)) then
+    new.email := lower(trim(new.email));
+  end if;
+
+  new.full_name := nullif(trim(new.full_name), '');
+  new.phone := nullif(trim(new.phone), '');
+  new.driver_license := nullif(trim(new.driver_license), '');
+
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_security_guard on public.profiles;
+create trigger profiles_security_guard
+before insert or update on public.profiles
+for each row execute function public.enforce_profile_security();
+
+create or replace function public.enforce_order_security()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.user_id is distinct from auth.uid() and public.current_role() not in ('manager', 'admin') then
+      raise exception 'Users can create orders only for themselves';
+    end if;
+
+    if public.current_role() = 'client' then
+      new.status := 'pending';
+    end if;
+  end if;
+
+  if tg_op = 'UPDATE' and public.current_role() = 'client' then
+    if new.user_id is distinct from old.user_id
+      or new.car_id is distinct from old.car_id
+      or new.pickup_point_id is distinct from old.pickup_point_id
+      or new.return_point_id is distinct from old.return_point_id
+      or new.date_from is distinct from old.date_from
+      or new.date_to is distinct from old.date_to
+      or new.total_price is distinct from old.total_price
+      or new.extras is distinct from old.extras
+      or new.created_at is distinct from old.created_at
+      or new.status <> 'cancelled'
+      or old.status <> 'pending'
+      or old.date_from::timestamp - now() < interval '24 hours'
+    then
+      raise exception 'Clients can only cancel their own orders';
+    end if;
+  end if;
+
+  if new.status <> 'cancelled' then
+    if exists (
+      select 1
+      from public.cars
+      where cars.id = new.car_id
+        and cars.status <> 'available'
+    ) then
+      raise exception 'Car is not available';
+    end if;
+
+    if exists (
+      select 1
+      from public.orders existing
+      where existing.car_id = new.car_id
+        and existing.status in ('pending', 'active')
+        and existing.id is distinct from new.id
+        and daterange(existing.date_from, existing.date_to, '[)') && daterange(new.date_from, new.date_to, '[)')
+    ) then
+      raise exception 'Car is already booked for these dates';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_security_guard on public.orders;
+create trigger orders_security_guard
+before insert or update on public.orders
+for each row execute function public.enforce_order_security();
+
+create or replace function public.enforce_payment_security()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.current_role() = 'client' then
+    new.status := 'pending';
+    new.paid_at := null;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists payments_security_guard on public.payments;
+create trigger payments_security_guard
+before insert or update on public.payments
+for each row execute function public.enforce_payment_security();
+
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.enforce_profile_security() from public, anon, authenticated;
+revoke all on function public.enforce_order_security() from public, anon, authenticated;
+revoke all on function public.enforce_payment_security() from public, anon, authenticated;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -132,6 +263,10 @@ for select using (auth.uid() = id or public.current_role() in ('manager', 'admin
 drop policy if exists "profiles update own" on public.profiles;
 create policy "profiles update own" on public.profiles
 for update using (auth.uid() = id) with check (auth.uid() = id);
+
+drop policy if exists "profiles admin update" on public.profiles;
+create policy "profiles admin update" on public.profiles
+for update using (public.current_role() = 'admin') with check (public.current_role() = 'admin');
 
 drop policy if exists "cars public read" on public.cars;
 create policy "cars public read" on public.cars for select using (true);
@@ -164,8 +299,14 @@ for insert with check (auth.uid() = user_id);
 
 drop policy if exists "orders update own cancel or staff" on public.orders;
 create policy "orders update own cancel or staff" on public.orders
-for update using (auth.uid() = user_id or public.current_role() in ('manager', 'admin'))
-with check (auth.uid() = user_id or public.current_role() in ('manager', 'admin'));
+for update using (
+  (auth.uid() = user_id and status <> 'cancelled')
+  or public.current_role() in ('manager', 'admin')
+)
+with check (
+  (auth.uid() = user_id and status = 'cancelled')
+  or public.current_role() in ('manager', 'admin')
+);
 
 drop policy if exists "payments select own or staff" on public.payments;
 create policy "payments select own or staff" on public.payments

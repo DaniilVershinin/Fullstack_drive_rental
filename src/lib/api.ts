@@ -1,6 +1,9 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { ALL_ORDERS, CARS, EXTRAS, EXISTING_BOOKINGS, MY_ORDERS, PICKUP_POINTS, USERS } from '../data'
 import type { AuthUser, Car, CarCategory, CarStatus, Extra, Order, OrderStatus, PickupPoint, Role, User } from '../types'
+import { assertCsrfToken, safeRemoteImageUrl } from './security'
+
+type MutationOptions = { csrfToken?: string }
 
 type CarRow = {
   id: number
@@ -74,23 +77,23 @@ function mapCar(row: CarRow): Car {
 
 function carToRow(car: Partial<Car>) {
   return {
-    name: car.name,
+    name: car.name?.trim(),
     year: car.year,
     category: car.cat,
     price_per_day: car.price,
     status: car.status,
     icon: car.icon,
-    fuel: car.fuel,
-    transmission: car.transmission,
+    fuel: car.fuel?.trim(),
+    transmission: car.transmission?.trim(),
     seats: car.seats,
-    city: car.city,
-    drive: car.drive,
+    city: car.city?.trim(),
+    drive: car.drive?.trim(),
     horsepower: car.horsepower,
-    engine_volume: car.engineVolume,
-    body_type: car.bodyType,
-    color: car.color,
+    engine_volume: car.engineVolume?.trim(),
+    body_type: car.bodyType?.trim(),
+    color: car.color?.trim(),
     trunk_volume: car.trunkVolume,
-    photo_url: car.photoUrl,
+    photo_url: safeRemoteImageUrl(car.photoUrl) || null,
   }
 }
 
@@ -146,6 +149,20 @@ function profileToUser(profile: ProfileRow): User {
 
 function assertConfigured() {
   if (!isSupabaseConfigured) throw new Error('Supabase is not configured')
+}
+
+async function requireAuthenticatedSession(options?: MutationOptions) {
+  assertCsrfToken(options?.csrfToken)
+
+  if (!isSupabaseConfigured) return null
+
+  const { data, error } = await supabase.auth.getSession()
+  if (error) throw error
+  const session = data.session
+  if (!session?.access_token || !session.user?.id) {
+    throw new Error('Требуется действительный JWT токен')
+  }
+  return session
 }
 
 export async function getCars(filters?: { city?: string; cat?: string }) {
@@ -205,13 +222,15 @@ export async function getPickupPointRows(): Promise<PickupPoint[]> {
   return (data as PickupPointRow[]).map(mapPickupPoint)
 }
 
-export async function savePickupPoint(point: Partial<PickupPoint>): Promise<PickupPoint> {
+export async function savePickupPoint(point: Partial<PickupPoint>, options?: MutationOptions): Promise<PickupPoint> {
+  await requireAuthenticatedSession(options)
+
   const payload = {
-    name: point.name,
-    address: point.address,
-    city: point.city,
-    hours: point.hours ?? '09:00-20:00',
-    phone: point.phone,
+    name: point.name?.trim(),
+    address: point.address?.trim(),
+    city: point.city?.trim(),
+    hours: point.hours?.trim() ?? '09:00-20:00',
+    phone: point.phone?.trim(),
   }
 
   if (!isSupabaseConfigured) {
@@ -226,7 +245,13 @@ export async function savePickupPoint(point: Partial<PickupPoint>): Promise<Pick
   return mapPickupPoint(data as PickupPointRow)
 }
 
-export async function saveCar(car: Partial<Car>): Promise<Car> {
+export async function saveCar(car: Partial<Car>, options?: MutationOptions): Promise<Car> {
+  await requireAuthenticatedSession(options)
+
+  if (car.photoUrl && !safeRemoteImageUrl(car.photoUrl)) {
+    throw new Error('Фото должно быть HTTPS URL с доверенного домена')
+  }
+
   const payload = carToRow(car)
   if (!isSupabaseConfigured) {
     return {
@@ -259,7 +284,8 @@ export async function saveCar(car: Partial<Car>): Promise<Car> {
   return mapCar(data as CarRow)
 }
 
-export async function updateCarStatus(carId: number, status: CarStatus) {
+export async function updateCarStatus(carId: number, status: CarStatus, options?: MutationOptions) {
+  await requireAuthenticatedSession(options)
   if (!isSupabaseConfigured) return
   const { error } = await supabase.from('cars').update({ status }).eq('id', carId)
   if (error) throw error
@@ -330,8 +356,14 @@ export async function createBooking(input: {
   pickupPoint: string
   returnPoint: string
   paymentMethod: string
-}) {
+}, options?: MutationOptions) {
+  const session = await requireAuthenticatedSession(options)
   if (!isSupabaseConfigured) return `DR-${Math.floor(2000 + Math.random() * 1000)}`
+  const userId = session?.user.id
+  if (!userId) throw new Error('Войдите в аккаунт для бронирования')
+  if (input.car.status !== 'available') throw new Error('Автомобиль сейчас недоступен')
+  if (!input.from || !input.to || input.to <= input.from) throw new Error('Некорректные даты аренды')
+  if (!Number.isFinite(input.total) || input.total <= 0) throw new Error('Некорректная сумма заказа')
 
   const pointId = await findPickupPointId(input.pickupPoint)
   const returnPointId = input.returnPoint === 'Тот же пункт' ? pointId : await findPickupPointId(input.returnPoint)
@@ -339,7 +371,7 @@ export async function createBooking(input: {
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
-      user_id: input.userId,
+      user_id: userId,
       car_id: input.car.id,
       pickup_point_id: pointId,
       return_point_id: returnPointId,
@@ -366,13 +398,15 @@ export async function createBooking(input: {
   return order.id as string
 }
 
-export async function cancelOrder(orderId: string) {
+export async function cancelOrder(orderId: string, options?: MutationOptions) {
+  await requireAuthenticatedSession(options)
   if (!isSupabaseConfigured) return
   const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId)
   if (error) throw error
 }
 
-export async function updateOrderStatus(orderId: string, status: OrderStatus) {
+export async function updateOrderStatus(orderId: string, status: OrderStatus, options?: MutationOptions) {
+  await requireAuthenticatedSession(options)
   if (!isSupabaseConfigured) return
   const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
   if (error) throw error
@@ -390,7 +424,9 @@ export async function getUsers() {
   return (data as ProfileRow[]).map(profileToUser)
 }
 
-export async function updateProfile(input: { id: string; fullName: string; dob: string; phone?: string; driverLicense?: string }): Promise<AuthUser> {
+export async function updateProfile(input: { id: string; fullName: string; dob: string; phone?: string; driverLicense?: string }, options?: MutationOptions): Promise<AuthUser> {
+  const session = await requireAuthenticatedSession(options)
+
   if (!isSupabaseConfigured) {
     const [first = '', second = ''] = input.fullName.split(' ')
     return {
@@ -402,6 +438,7 @@ export async function updateProfile(input: { id: string; fullName: string; dob: 
       role: 'client',
     }
   }
+  if (session?.user.id !== input.id) throw new Error('Нельзя изменить чужой профиль')
 
   const { data, error } = await supabase
     .from('profiles')
@@ -453,7 +490,6 @@ export async function register(input: { email: string; password: string; name: s
         dob: input.dob,
         phone: input.phone,
         driver_license: input.dl,
-        role: 'client',
       },
     },
   })
